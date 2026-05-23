@@ -1556,32 +1556,30 @@ function exportarPDF(){
   
   document.getElementById('modal-pdf').classList.add('open');
 }
-
-function imprimirPDF() {
+  function imprimirPDF() {
     // 1. Obtenemos el contenido del modal y los estilos
     var contenido = document.getElementById('pdf-modal-body').innerHTML;
     var estilos = document.getElementById('pdf-style') ? document.getElementById('pdf-style').innerHTML : '';
 
-    // 2. Creamos una ventana nueva
-    var win = window.open('', '_blank', 'width=800,height=600');
+    // 2. Creamos un contenedor temporal
+    var tempDiv = document.createElement('div');
+    tempDiv.innerHTML = '<style>' + estilos + ' body { background: white; color: black; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #000; padding: 8px; }</style>' + contenido;
     
-    // 3. Escribimos el documento con un pequeño retraso para asegurar carga
-    win.document.write('<html><head><title>Impresión ContaFlux</title>');
-    win.document.write('<style>' + estilos + ' body { background: white; color: black; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #000; padding: 8px; }</style>');
-    win.document.write('</head><body>');
-    win.document.write(contenido);
-    win.document.write('</body></html>');
-    
-    // 4. IMPORTANTE: Cerramos el stream de escritura y esperamos a que cargue
-    win.document.close();
-    win.focus();
-    
-    // 5. Pequeño delay antes de llamar al print para asegurar que el navegador renderice la tabla
-    setTimeout(function() {
-        win.print();
-        // Opcional: win.close(); // Descomenta esto si quieres que la ventana se cierre sola tras imprimir
-    }, 500);
+    // 3. Configuramos opciones para html2pdf
+    var opt = {
+        margin: [10, 10, 10, 10],
+        filename: 'Reporte_ContaFlux_' + new Date().toISOString().split('T')[0] + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    // 4. Generamos el PDF
+    html2pdf().set(opt).from(tempDiv).save();
 }
+
+
 
 // ── INITIALIZATION ──
 (function() {
