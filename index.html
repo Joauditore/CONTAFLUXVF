@@ -1557,28 +1557,61 @@ function exportarPDF(){
   document.getElementById('modal-pdf').classList.add('open');
 }
   function imprimirPDF() {
-    // 1. Obtenemos el contenido del modal y los estilos
-    var contenido = document.getElementById('pdf-modal-body').innerHTML;
-    var estilos = document.getElementById('pdf-style') ? document.getElementById('pdf-style').innerHTML : '';
-
-    // 2. Creamos un contenedor temporal
-    var tempDiv = document.createElement('div');
-    tempDiv.innerHTML = '<style>' + estilos + ' body { background: white; color: black; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #000; padding: 8px; }</style>' + contenido;
+    // Obtenemos el contenedor con todo el contenido
+    var pdfContainer = document.getElementById('pdf-modal-body');
     
-    // 3. Configuramos opciones para html2pdf
+    // Verificamos que exista contenido
+    if (!pdfContainer || !pdfContainer.innerHTML) {
+        alert('⚠️ No hay contenido para generar. Primero genera los reportes en las pestañas.');
+        return;
+    }
+    
+    // Obtenemos los estilos
+    var styleElement = document.getElementById('pdf-style');
+    var estilosCSS = styleElement ? styleElement.innerHTML : '';
+    
+    // Creamos un nuevo contenedor para el PDF
+    var elementoParaExportar = document.createElement('div');
+    elementoParaExportar.innerHTML = pdfContainer.innerHTML;
+    
+    // Aplicamos estilos CSS directamente
+    var styleTag = document.createElement('style');
+    styleTag.innerHTML = estilosCSS + 
+        'body { margin: 0; padding: 20px; background: white; color: #1a1a1a; font-family: Arial, sans-serif; }' +
+        '.page { width: 100%; }' +
+        'table { width: 100%; border-collapse: collapse; margin: 10px 0; }' +
+        'th, td { border: 1px solid #999; padding: 8px; text-align: right; }' +
+        'th { background: #f0f0f0; font-weight: bold; }' +
+        'th:first-child, td:first-child { text-align: left; }' +
+        '@media print { body { margin: 0; padding: 10px; } }';
+    
+    elementoParaExportar.insertBefore(styleTag, elementoParaExportar.firstChild);
+    
+    // Configuración del PDF
     var opt = {
         margin: [10, 10, 10, 10],
-        filename: 'Reporte_ContaFlux_' + new Date().toISOString().split('T')[0] + '.pdf',
+        filename: 'Reporte_ContaFlux_' + new Date().toLocaleDateString('es-CL').replace(/\//g, '-') + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, useCORS: true, allowTaint: true },
         jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
-
-    // 4. Generamos el PDF
-    html2pdf().set(opt).from(tempDiv).save();
+    
+    // Generamos y descargamos el PDF
+    try {
+        html2pdf().set(opt).from(elementoParaExportar).save()
+            .then(function() {
+                console.log('✅ PDF generado exitosamente');
+            })
+            .catch(function(err) {
+                console.error('❌ Error al generar PDF:', err);
+                alert('Hubo un error generando el PDF. Intenta nuevamente.');
+            });
+    } catch(e) {
+        console.error('❌ Error crítico:', e);
+        alert('Error: ' + e.message);
+    }
 }
-
 
 
 // ── INITIALIZATION ──
